@@ -26,6 +26,7 @@ grid.matriz[final[0]][final[1]] = 2
 
 inicio = node.Node(inicial)
 inicio.setheuristica(final)
+custo = 0
 
 abertos = []
 open = []
@@ -33,62 +34,47 @@ closed = []
 open.append(inicio)
 abertos.append(inicio.pos)
 
+clock = pygame.time.Clock()
 while len(open) > 0:
+    screen.fill((255, 255, 255))
     melhor = None
     for no in open:
         if melhor is None or no.custo < melhor.custo:
             melhor = no
+    print("Visitado: ", melhor.pos, end="")
     if melhor.pos == final:
         break
     else:
-        print(melhor.pos, abertos)
+        melhor.custo += custo
         abertos.remove(melhor.pos)
         open.remove(melhor)
         closed.append(melhor.pos)
-    for i in [-1, 0, 1]:
-        for j in [-1, 0, 1]:
-            pos = (melhor.pos[0] + i, melhor.pos[1] + j)
+
+        custo = melhor.custo
+        print("Novos Estados gerados: ", end="")
+        for pos in [(melhor.pos[0] + 1, melhor.pos[1]), (melhor.pos[0] - 1, melhor.pos[1]),
+                    (melhor.pos[0], melhor.pos[1] + 1), (melhor.pos[0], melhor.pos[1] - 1)]:
             # testa se tem não obstaculo ou se está acessando dentro da grid
-            if 0 <= pos[0] < colunas and 0 <= pos[1] < linhas and grid.matriz[pos[0]][
-                pos[1]] != -1 and pos != melhor.pos:
+            if 0 <= pos[0] < colunas and 0 <= pos[1] < linhas and grid.matriz[pos[0]][pos[1]] != -1 and pos != melhor.pos:
                 if pos not in closed and pos not in abertos:
                     novo = node.Node(pos)
                     novo.setheuristica(final)
-                    novo.custo += melhor.custo
+                    novo.pai = melhor
                     open.append(novo)
                     abertos.append(novo.pos)
+                    print(novo.pos, end="")
+        print(" ")
 
-clock = pygame.time.Clock()
+    grid.matriz[melhor.pos[0]][melhor.pos[1]] = 1
+    grid.imprime(linhas, colunas, pygame, screen, janelaw, janelah)
+    pygame.display.update()
+    grid.matriz[melhor.pos[0]][melhor.pos[1]] = 0
+    time_passed = clock.tick()
+
 while True:
     for event in pygame.event.get():
         if event.type == QUIT:
             exit()
-    screen.fill((255, 255, 255))
-
-    if len(closed) == 0:
-        break
-    else:
-        x = closed.pop(0)
-        grid.matriz[x[0]][x[1]] = 1
-    for i in range(0, colunas):
-        for j in range(0, linhas):
-            if grid.matriz[i][j] == 1:
-                pygame.draw.rect(screen, (0, 0, 255),
-                                 [(janelaw / colunas) * i, (janelah / linhas) * j, janelaw / colunas,
-                                  janelah / linhas])
-            elif grid.matriz[i][j] == 2:
-                pygame.draw.rect(screen, (0, 0, 0),
-                                 [(janelaw / colunas) * i, (janelah / linhas) * j, janelaw / colunas,
-                                  janelah / linhas])
-            elif grid.matriz[i][j] == -1:
-                pygame.draw.rect(screen, (255, 0, 0),
-                                 [(janelaw / colunas) * i, (janelah / linhas) * j, janelaw / colunas,
-                                  janelah / linhas])
-            else:
-                pygame.draw.rect(screen, (255, 0, 0),
-                                 [(janelaw / colunas) * i, (janelah / linhas) * j, janelaw / colunas,
-                                  janelah / linhas],
-                                 2)
+    grid.imprimerota(melhor)
+    grid.imprime(linhas, colunas, pygame, screen, janelaw, janelah)
     pygame.display.update()
-    grid.matriz[x[0]][x[1]] = 0
-    time_passed = clock.tick(15)
